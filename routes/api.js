@@ -8,12 +8,16 @@
 
 'use strict';
 
+const mongoose = require('mongoose')
 const bookModel = require('../models.js')
 
 module.exports = function (app) {
 
   app.route('/api/books')
-    .get(function (req, res) {
+    .get(async (req, res) => {
+      res.json(await bookModel.aggregate([
+        { $match: {} }
+      ]))
       //response will be array of book objects
       //json res format: [{"_id": bookid, "title": book_title, "commentcount": num_of_comments },...]
     })
@@ -38,8 +42,14 @@ module.exports = function (app) {
 
 
   app.route('/api/books/:id')
-    .get(function (req, res) {
+    .get(async (req, res) => {
       let bookid = req.params.id;
+      try {
+        const bookDoc = await bookModel.findById(bookid)
+        res.json(bookDoc)
+      } catch (err) {
+        res.send('no book exists')
+      }
       //json res format: {"_id": bookid, "title": book_title, "comments": [comment,comment,...]}
     })
 
