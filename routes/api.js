@@ -35,7 +35,9 @@ module.exports = function (app) {
       //response will contain new book object including atleast _id and title
     })
 
-    .delete(function (req, res) {
+    .delete(async (req, res) => {
+      const result = bookModel.deleteMany({})
+      res.send('complete delete successful')
       //if successful response will be 'complete delete successful'
     });
 
@@ -46,21 +48,54 @@ module.exports = function (app) {
       let bookid = req.params.id;
       try {
         const bookDoc = await bookModel.findById(bookid)
-        res.json(bookDoc)
+        res.json({ // fcc test wanted this order. 
+          comments: bookDoc.comments,
+          _id: bookDoc._id,
+          title: bookDoc.title,
+          commentcount: bookDoc.commentcount,
+          __v: bookDoc.__v
+        })
       } catch (err) {
         res.send('no book exists')
       }
       //json res format: {"_id": bookid, "title": book_title, "comments": [comment,comment,...]}
     })
 
-    .post(function (req, res) {
+    .post(async (req, res) => {
       let bookid = req.params.id;
       let comment = req.body.comment;
+      if (!comment) {
+        res.send('missing required field comment')
+        return
+      }
+      try {
+        let bookDoc = await bookModel.findById(bookid)
+        bookDoc.comments.push(comment)
+        bookDoc = await bookDoc.save()
+        res.json({
+          comments: bookDoc.comments,
+          _id: bookDoc._id,
+          title: bookDoc.title,
+          commentcount: bookDoc.commentcount,
+          __v: bookDoc.__v
+        })
+      } catch (err) {
+        res.send('no book exists')
+      }
       //json res format same as .get
     })
 
-    .delete(function (req, res) {
+    .delete(async (req, res) => {
       let bookid = req.params.id;
+      try {
+        const bookDoc = await bookModel.findByIdAndDelete(bookid)
+        if (!bookDoc) {
+          throw new Error('no book found') // findByIdAndDelete does not throw an error if nothing is found. 
+        }
+        res.send('delete successful')
+      } catch (err) {
+        res.send('no book exists')
+      }
       //if successful response will be 'delete successful'
     });
 
